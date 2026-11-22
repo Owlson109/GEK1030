@@ -82,3 +82,17 @@ html[data-quiz-active] main.deck>.quiz-slide,html[data-quiz-active] .quiz-slide>
 .quiz-root[data-role=guest] .lantern-roll li:before{background:#31453e;width:7px;height:7px;vertical-align:middle;box-shadow:none}
 @keyframes tag-bob{from{transform:translateY(-4px) rotate(-2deg)}to{transform:translateY(4px) rotate(2deg)}}
 .quiz-root button.end-game{display:block;margin:8px 0 12px auto;padding:7px 15px;background:transparent;color:#ffd7bf;border:1px solid #d6a28b;font-size:16px;box-shadow:none}
+
+/* Layered night landscape and printed festival passes. */
+html[data-quiz-active] main.deck>.quiz-slide{background:linear-gradient(155deg,#20273e,#37485a 52%,#b08069)}
+.lantern-sky{background:radial-gradient(circle at 84% 22%,#ffdda8 0 3.8vmin,#f8d89522 4vmin,transparent 13vmin),radial-gradient(ellipse at 7% 80%,#ad76714a,transparent 47%)}
+.festival-hills{position:absolute;bottom:0;width:100%;height:35%;left:0}
+.quiz-slide .quiz-root .quiz-content{border:1px solid #a9957866;border-top:3px solid #eabf84;background:linear-gradient(135deg,#293e45fa,#192d37fa 82%);box-shadow:0 18px 52px #111c3055;border-radius:6px 24px 6px 24px}
+.quiz-root .quiz-kicker{color:#f1c58f}
+.quiz-root .festival-pass{display:flex;align-items:center;gap:clamp(14px,3vw,28px);width:fit-content;max-width:100%;margin:18px 0 8px;padding:12px 26px 12px 12px;border-radius:60px 12px 12px 60px;background:linear-gradient(105deg,#ffe6ba,#edc992);color:#393837;box-shadow:3px 4px 0 #0b252a}
+.festival-pass .animal-seal{width:clamp(65px,12vw,104px);height:auto;animation:seal-arrive .55s ease-out both}
+.festival-pass small,.festival-pass strong{display:block}.festival-pass strong{font:bold clamp(28px,4.5vw,48px)/1.15 Georgia,"Songti TC",serif}.festival-pass small{font-size:15px;margin-bottom:3px}
+.quiz-root .lantern-roll li{display:inline-flex;align-items:center;gap:9px}.quiz-root .lantern-roll li:before{display:none}.lantern-roll li span{min-width:0}.lantern-roll .animal-seal{width:1.65em;flex:none}
+.quiz-root .quiz-options>*{border-radius:3px 15px 3px 15px}
+@keyframes seal-arrive{from{opacity:.15;transform:scale(1.22) rotate(-12deg)}to{opacity:1;transform:none}}
+.quiz-slide .quiz-root .quiz-content>p:not([class]){color:#f1e6cf}
