@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "gek1030": {
+      "page": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === 'REPLACE_WITH_PRESENTER_UID'",
+        ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 14 && newData.val() % 1 === 0"
+      }
+    }
+  }
+}
