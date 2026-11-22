@@ -37,6 +37,13 @@
                   }
                 }
               }
+            },
+            "names": {
+              ".read": "auth != null && data.parent().child('players').child(auth.uid).child('name').exists()",
+              "$uid": {
+                ".write": "auth != null && auth.uid === $uid && root.child('gek1030/quiz/control').child('game').val() === $game && root.child('gek1030/quiz/control').child('phase').val() === 'lobby' && !data.exists() && newData.exists()",
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.parent().parent().child('players').child($uid).child('name').val() === newData.val()"
+              }
             }
           }
         }
