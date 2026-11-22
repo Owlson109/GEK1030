@@ -79,16 +79,39 @@
     });
     return entries;
   }
+  let names = {}, namesWatcher, opening = false;
+  function disconnectNames() { namesWatcher?.(); namesWatcher=null; names={}; }
+  function showRoster(box, entries) {
+    const list=node('ul',undefined,'lantern-roll');
+    for(const name of entries) {
+      const chip=node('li',name);
+      chip.style.setProperty('--tone',String([...name].reduce((sum,c)=>sum+c.codePointAt(0),0)%46));
+      list.append(chip);
+    }
+    box.append(list);
+  }
+  function openLobbyIfReady() {
+    if (!live || !loaded || state || !connected || !context?.sharing || opening || issue) return;
+    opening=true;
+    advance('lobby').catch(e=>{issue=e.code || e.message; render();}).finally(()=>{opening=false;});
+  }
   function watchPeople() {
     const host = context.presenter && context.sharing;
     const key = state?.game && (host || uid) ? state.game + ':' + (host ? 'host' : uid) : '';
     if (key === activeGame) return;
-    activeGame = key; rosterWatcher?.(); rosterWatcher = null;
+    activeGame = key; disconnectNames(); rosterWatcher?.(); rosterWatcher = null;
     players = {}; player = null;
     if (!key) return;
     rosterWatcher = api.onValue(ref(peoplePath() + (host ? '' : '/' + uid)), snap => {
       if (key !== activeGame) return;
-      if (host) players = snap.val() || {}; else player = snap.val();
+      if (host) players = snap.val() || {}; else {
+        player = snap.val();
+        if (player?.name && !namesWatcher) {
+          namesWatcher = api.onValue(ref('games/'+state.game+'/names'), list=>{
+            if (key===activeGame) {names=list.val() || {};render();}
+          }, err=>{if(key===activeGame){issue=err.code || err.message;render();}});
+        }
+      }
       render();
     }, err => { if (activeGame === key) { issue = err.code || err.message; render(); } });
   }
@@ -108,7 +131,7 @@
       db = api.getDatabase(app);
     } else db = context.db;
     watcher = api.onValue(ref('control'), snap => {
-      loaded=true; state=snap.val(); issue=''; watchPeople(); render();
+      loaded=true; state=snap.val(); issue=''; watchPeople(); openLobbyIfReady(); render();
     }, err=>{issue=err.code || err.message;render();});
   }
   async function advance(phase) {
@@ -130,7 +153,7 @@
     if (!name || [...name].length > 24) throw new Error('NAME_LENGTH');
     if (!guestAuth.currentUser) await identity.signInAnonymously(guestAuth);
     uid=guestAuth.currentUser.uid;
-    await api.set(ref('games/'+game+'/players/'+uid+'/name'),name);
+    await api.update(ref('games/'+game),{['players/'+uid+'/name']:name,['names/'+uid]:name});
     watchPeople();
   }
   function answer(index) {
@@ -146,9 +169,30 @@
     const people = standings();
     if (state.phase==='lobby') {
       box.append(node('h3',t('已加入','Joined')+' · '+people.length));
-      box.append(node('p',people.map(p=>p.name).join(' · ') || t('等待觀眾輸入名稱…','Waiting for participants…'),'quiz-roster'));
+      if (people.length) showRoster(box,people.map(p=>p.name)); else box.append(node('p',t('等待第一盞名燈亮起…','Waiting for the first player…')));
       box.append(button(t('統一開始第一題','Start question 1 for everyone'),()=>advance('open'),!people.length));
       return;
+    }
+    if (state.phase==='finished' && people.length) {
+      const winners=people.filter(p=>p.rank===1);
+      const medal=node('div',undefined,'winner-banner');
+      medal.append(node('small',t('榜首','First place')),node('strong',winners.map(p=>p.name).join(' · ')));
+      box.append(medal);
+    }
+    if(state.phase==='review') {
+      const chart=node('div',undefined,'quiz-chart');
+      for(let i=0;i<4;i++) {
+        const count=people.filter(p=>p.answers?.[state.round]?.choice===i).length;
+        const line=node('div');line.append(node('b','ABCD'[i]),node('i'),node('span',String(count)));
+        line.style.setProperty('--amount',String(count/Math.max(people.length,1)));chart.append(line);
+      }
+      box.append(node('h3',t('本題選項分布','Answer distribution')),chart);
+    }
+    if (state.phase==='open') {
+      const count=people.filter(p=>p.answers?.[state.round]).length;
+      const meter=node('div',undefined,'answer-meter');
+      meter.append(node('strong',t('已交答案','Answers in')+'  '+count+' / '+people.length));
+      const bar=node('progress');bar.max=Math.max(people.length,1);bar.value=count;meter.append(bar);box.append(meter);
     }
     if (state.phase==='open') box.append(button(t('收回答案並揭曉','Close answers and reveal'),()=>advance('review')));
     if (state.phase==='review') {
@@ -178,7 +222,7 @@
     }
     if (!player?.name) {box.append(node('p',t('本局已開始，可觀看題目並等候下一局。','This game has started. Follow the questions and join the next game.')));return;}
     box.append(node('h3',player.name));
-    if (state.phase==='lobby') {box.append(node('p',t('已加入，請等候講者統一開題。','You’re in. Waiting for the presenter to start.')));return;}
+    if (state.phase==='lobby') {showRoster(box,Object.values(names));box.append(node('p',t('已加入，請等候講者統一開題。','You’re in. Waiting for the presenter to start.')));return;}
     const a=player.answers?.[state.round];
     if (state.phase==='open' && !a) {
       const options=node('div',undefined,'quiz-options');
@@ -192,14 +236,34 @@
       box.append(node('p',t('累計答對 ','Correct answers: ')+result.correct+' / '+rounds.length+' · '+timeText(result.ms)));
     }
   }
+  function lanternSky() {
+    const sky=node('div',undefined,'lantern-sky');sky.setAttribute('aria-hidden','true');
+    for(let i=0;i<8;i++){
+      const lamp=node('i',undefined,'sky-lamp');lamp.style.setProperty('--x',(i*37%103)+'%');
+      lamp.style.setProperty('--delay',(-i*1.73)+'s');lamp.style.setProperty('--size',(29+i%3*19)+'px');
+      lamp.style.setProperty('--drop',(i%4*30)+'px');sky.append(lamp);
+    }
+    return sky;
+  }
   function render() {
     if (!live || !root) return;
     const focused=root.querySelector('input')===document.activeElement, pos=focused?document.activeElement.selectionStart:0;
-    const content=node('div',undefined,'quiz-content');
+    const phase=state?.phase || 'lobby';
+    root.dataset.phase=phase; root.dataset.role=context?.presenter?'host':'guest';
+    const scene=phase+':'+roundIndex();
+    const entering=root.dataset.scene!==scene;
+    root.dataset.scene=scene;
+    const content=node('div',undefined,'quiz-content'+(entering?' scene-enter':''));
+    const art=root.querySelector('.lantern-sky') || lanternSky();
+    const old=root.querySelector('.quiz-content');
     content.append(node('p','GEK1030  /  '+t('課堂問答','CLASS QUIZ'),'quiz-kicker'));
     const showQuestion=state && ['open','review'].includes(state.phase);
     const round=rounds[roundIndex()];
-    content.append(node('h2',showQuestion?pick(round.q):state?.phase==='finished'?t('總排名','Final standings'):t('口罩短缺中的選擇','Choices in a mask shortage')));
+    if (showQuestion || phase==='finished') {
+      const rail=node('div',undefined,'round-wick');rail.setAttribute('aria-hidden','true');
+      rounds.forEach((_,i)=>rail.append(node('i',undefined,i<=roundIndex()?'lit':'')));content.append(rail);
+    }
+    content.append(node('h2',showQuestion?pick(round.q):state?.phase==='finished'?t('總排名','Final standings'):t('仁心燈會','Lanterns of Benevolence')));
     content.append(node('p',showQuestion?t('第 ','Question ')+(roundIndex()+1)+' / '+rounds.length:t('五題四選一。答對較多者優先，同分按答對題目的總耗時排名。','Five multiple-choice questions. Most correct answers wins. Ties are ranked by total time on correct answers.'),'quiz-intro'));
     if (showQuestion && (context?.presenter || state.phase==='review' || !player?.name)) {
       const options=node('div',undefined,'quiz-options');
@@ -215,18 +279,19 @@
       if(issue==='NAME_LENGTH')msg=t('請輸入 1 至 24 個字元的名稱。','Enter a name of 1–24 characters.');
       content.append(node('p',msg+' ('+issue+')','quiz-error'));
     } else if(!connected && context)content.append(node('p',t('等待重新連線…','Waiting to reconnect…')));
-    root.replaceChildren(content);
+    if (!art.parentElement) root.prepend(art);
+    if (old) old.replaceWith(content); else root.append(content);
     if(focused){const i=root.querySelector('input');if(i){i.focus();i.setSelectionRange(pos,pos);}}
   }
   window.gekQuiz = {
     update(next) {
       const hostChanged=context?.sharing !== next.sharing;
       context=next;connected=next.connected;
-      if(live) {if(hostChanged && watcher)watchPeople(); if (!watcher)attach().catch(e=>{issue=e.message;render();});render();}
+      if(live) {if(hostChanged && watcher)watchPeople();openLobbyIfReady(); if (!watcher)attach().catch(e=>{issue=e.message;render();});render();}
     },
     page(n) {
       live=n===15; document.documentElement.toggleAttribute('data-quiz-active',live);
-      if(!live){loaded=false;state=null;players={};player=null;subscription++;watcher?.();rosterWatcher?.();watcher=null;rosterWatcher=null;activeGame=null;return;}
+      if(!live){disconnectNames();loaded=false;state=null;players={};player=null;subscription++;watcher?.();rosterWatcher?.();watcher=null;rosterWatcher=null;activeGame=null;return;}
       root=document.querySelector('.deck > .quiz-slide .quiz-root');
       attach().catch(e=>{issue=e.message;render();});render();
     },
