@@ -4,7 +4,42 @@
       "page": {
         ".read": true,
         ".write": "auth != null && auth.uid === 'REPLACE_WITH_PRESENTER_UID'",
-        ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 14 && newData.val() % 1 === 0"
+        ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 15 && newData.val() % 1 === 0"
+      },
+      "quiz": {
+        "control": {
+          ".read": true,
+          ".write": "auth != null && auth.uid === 'REPLACE_WITH_PRESENTER_UID'"
+        },
+        "games": {
+          "$game": {
+            "players": {
+              ".read": "auth != null && auth.uid === 'REPLACE_WITH_PRESENTER_UID'",
+              "$uid": {
+                ".read": "auth != null && auth.uid === $uid",
+                "name": {
+                  ".write": "auth != null && auth.uid === $uid && root.child('gek1030/quiz/control').child('game').val() === $game && root.child('gek1030/quiz/control').child('phase').val() === 'lobby' && !data.exists() && newData.exists()",
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24"
+                },
+                "answers": {
+                  "$round": {
+                    ".write": "auth != null && auth.uid === $uid && root.child('gek1030/quiz/control').child('game').val() === $game && root.child('gek1030/quiz/control').child('phase').val() === 'open' && root.child('gek1030/quiz/control').child('round').val() === $round && data.parent().parent().child('name').exists() && !data.exists() && newData.exists()",
+                    ".validate": "newData.hasChildren(['choice','at'])",
+                    "at": {
+                      ".validate": "newData.isNumber() && newData.val() === now"
+                    },
+                    "choice": {
+                      ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3 && newData.val() % 1 === 0"
+                    },
+                    "$other": {
+                      ".validate": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
