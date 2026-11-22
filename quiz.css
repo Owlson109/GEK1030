@@ -30,3 +30,40 @@ html[data-quiz-active] main.deck > .quiz-slide {position:absolute;inset:0;paddin
 @media(max-width:650px){.quiz-options{grid-template-columns:1fr}.quiz-root td,.quiz-root th{padding:5px}.quiz-root{padding-bottom:70px}}
 @media print {html[data-quiz-active] main.deck {position:static;overflow:visible}html[data-quiz-active] main.deck > .slide:not(.quiz-slide){visibility:visible}}
 html[data-quiz-active] .quiz-slide .slide-body.quiz-root {position:absolute;inset:0;width:100%;max-width:none;height:100%;display:block;margin:0;padding:clamp(65px,7vh,92px) max(5vw,18px) 90px}
+/* A moonlit lantern festival. The stage stays in place as answers arrive. */
+html[data-quiz-active] main.deck > .quiz-slide {
+ background:radial-gradient(ellipse at 83% 12%,#4f4438 0%,transparent 35%),radial-gradient(ellipse at 0 90%,#225351 0%,transparent 49%),#102b30;
+}
+.quiz-slide .quiz-root {color:#fff3d7;isolation:isolate}
+.quiz-content {position:relative;z-index:1;max-width:980px;margin:2vh auto 0;padding:clamp(18px,3vw,46px);border:1px solid #ceb27777;border-top:3px solid #ebc586;border-radius:4px 32px 4px 32px;background:linear-gradient(122deg,#163436f5,#1d3739e8 63%,#304043ee);box-shadow:0 18px 60px #07181966}
+.quiz-slide .quiz-root h2 {color:#fff0cf;font-size:clamp(29px,3.7vw,58px);margin:.2em 0 .35em}
+.quiz-root[data-phase=lobby] h2,.quiz-root[data-phase=finished] h2 {font-size:clamp(44px,6vw,88px);color:#f9d894;letter-spacing:.025em}
+.quiz-root .quiz-kicker {color:#e7be79;letter-spacing:.18em}
+.quiz-root .quiz-intro {color:#e0daca}
+.quiz-root button {background:#f8ce83;color:#223732;box-shadow:0 4px 0 #9c7545;border:1px solid #ffe3ac;font-weight:650}
+.quiz-root button:hover:not(:disabled) {background:#ffe5ae;transform:translateY(-1px)}
+.quiz-root .quiz-options button,.quiz-root .quiz-option {background:linear-gradient(115deg,#314d4e,#263f42);color:#fff4df;border:1px solid #71877e;border-left:5px solid #df9c66;box-shadow:none}
+.quiz-options>:nth-child(2){border-left-color:#86c7ac!important}.quiz-options>:nth-child(3){border-left-color:#d49ba4!important}.quiz-options>:nth-child(4){border-left-color:#b6b4df!important}
+.quiz-root .quiz-options button:hover:not(:disabled){background:#49625b;color:white}
+.quiz-root .quiz-option.quiz-correct,.quiz-root .quiz-reason {background:#355e4d;color:#fff4d7;border-color:#c6daa0}
+.quiz-root td,.quiz-root th {border-color:#54706b}.quiz-root th{background:#234343;color:#f3d69e}.quiz-root tr:nth-child(2) td:first-child{color:#ffcf74;font-weight:bold}
+.quiz-root input {background:#fbf4df;color:#213a38}.quiz-error {color:#ffb3a4}
+.lantern-sky {position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;background:radial-gradient(ellipse at 70% 90%,#587b732c,transparent 36%)}
+.sky-lamp {position:absolute;left:var(--x);top:var(--drop);width:var(--size);height:calc(var(--size)*1.28);border-radius:40% 40% 43% 43%;border-block:4px solid #8f6742;background:repeating-linear-gradient(90deg,transparent 0 19%,#9b572952 20% 22%),radial-gradient(ellipse at 50% 58%,#ffdf8d,#e1914c 55%,#904832);box-shadow:0 0 35px #f4b96a55;transform-origin:50% -30px;animation:lamp-rock 6s ease-in-out var(--delay) infinite alternate}
+.sky-lamp:before,.sky-lamp:after {content:'';position:absolute;left:50%;background:#c99c64;width:2px}.sky-lamp:before{height:150px;bottom:100%}.sky-lamp:after{height:19px;top:100%;box-shadow:2px 4px #b16d3e}
+.lantern-roll {display:flex;flex-wrap:wrap;gap:9px;padding:3px;list-style:none;max-height:28vh;overflow:auto}
+.lantern-roll li {padding:7px 13px;border:1px solid #728878;border-radius:18px;background:#203f3e;color:#fff2d5;overflow-wrap:anywhere}
+.lantern-roll li:before {content:'';display:inline-block;width:10px;height:13px;border-radius:42%;background:hsl(calc(20 + var(--tone)) 85% 71%);box-shadow:0 0 10px #eab778;margin-right:9px;animation:lantern-glow 3s ease-in-out infinite alternate}
+.answer-meter {display:flex;align-items:center;gap:16px;margin:14px 0;color:#edd8ad}.answer-meter progress {accent-color:#f1bd71;flex:1;height:12px}
+.round-wick {display:flex;gap:6px;margin:9px 0}.round-wick i{width:32px;height:4px;background:#54716a;border-radius:5px}.round-wick .lit{background:#efc27b;box-shadow:0 0 8px #dfaa564d}
+.scene-enter h2,.scene-enter .quiz-options>* {animation:lantern-enter .5s ease-out both}.scene-enter .quiz-options>:nth-child(2){animation-delay:.06s}.scene-enter .quiz-options>:nth-child(3){animation-delay:.12s}.scene-enter .quiz-options>:nth-child(4){animation-delay:.18s}
+.quiz-root[data-role=host] .lantern-sky:after {content:'';position:absolute;inset:-40%;background-image:radial-gradient(circle,#f5ce8d 1px,transparent 2px),radial-gradient(circle,#b0c9aa 1px,transparent 2px);background-size:119px 97px,161px 113px;background-position:13px 29px,68px 54px;opacity:.35;animation:drifting-embers 18s linear infinite}
+@keyframes lamp-rock{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}@keyframes lantern-glow{to{filter:brightness(1.22)}}@keyframes lantern-enter{from{transform:translateY(13px);opacity:.25}to{transform:none;opacity:1}}@keyframes drifting-embers{to{transform:translate(28px,-97px)}}
+@media(max-width:650px){.quiz-content{padding:19px 15px;margin:0 auto}.sky-lamp:nth-child(even){display:none}.quiz-slide .quiz-root .quiz-intro{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.quiz-root *,.quiz-root *:after,.quiz-root *:before{animation:none!important;transition:none!important}}
+.quiz-root button:hover:not(:disabled){transform:none}
+html[data-quiz-active] main.deck>.quiz-slide,html[data-quiz-active] .quiz-slide>.slide-body.quiz-root {animation:none!important;transform:none!important}
+.quiz-root {overflow-anchor:none}
+.quiz-chart{display:grid;grid-template-columns:repeat(2,1fr);gap:7px 25px;margin:10px 0 18px}.quiz-chart>div{display:grid;grid-template-columns:1em 1fr 2ch;align-items:center;gap:8px}.quiz-chart i{height:8px;border-radius:4px;background:#e7bd78;transform-origin:left;transform:scaleX(var(--amount));animation:bar-fill .65s ease-out}.winner-banner{padding:15px 22px;margin:16px 0;border-left:4px solid #e4b363;background:linear-gradient(110deg,#735532,#39453d 80%);color:#ffe1a9}.winner-banner strong{display:block;font:700 clamp(24px,3vw,45px)/1.4 Georgia,serif;overflow-wrap:anywhere}.winner-banner small{letter-spacing:.15em}
+@keyframes bar-fill{from{transform:scaleX(0)}to{transform:scaleX(var(--amount))}}
+@media(prefers-reduced-motion:reduce){.quiz-chart i{animation:none}}
