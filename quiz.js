@@ -166,6 +166,13 @@
     if (!state) {
       box.append(button(t('開放報名','Open registration'),()=>advance('lobby'))); return;
     }
+    if (state.phase !== 'finished') {
+      const end = button(t('提早結束遊戲','End game early'), async () => {
+        if (window.confirm(t('現在收燈？所有裝置會停止作答，已提交的答案會保留。','Close the festival? Answers will close for everyone. Submitted answers still count.'))) await advance('finished');
+      });
+      end.className='end-game';
+      box.append(end);
+    }
     const people = standings();
     if (state.phase==='lobby') {
       box.append(node('h3',t('已加入','Joined')+' · '+people.length));
@@ -173,7 +180,7 @@
       box.append(button(t('統一開始第一題','Start question 1 for everyone'),()=>advance('open'),!people.length));
       return;
     }
-    if (state.phase==='finished' && people.length) {
+    if (state.phase==='finished' && Object.keys(state.starts || {}).length && people.length) {
       const winners=people.filter(p=>p.rank===1);
       const medal=node('div',undefined,'winner-banner');
       medal.append(node('small',t('榜首','First place')),node('strong',winners.map(p=>p.name).join(' · ')));
@@ -214,15 +221,23 @@
   function viewerView(box) {
     if (!state) {box.append(node('p',t('等待講者開放報名。','Waiting for registration to open.')));return;}
     if (!player?.name && state.phase==='lobby') {
-      const form=node('form'),label=node('label',t('你的顯示名稱','Your display name'));
-      const input=node('input'); input.name='nickname'; input.autocomplete='nickname';input.maxLength=24;input.required=true;input.value=draft;
+      const form=node('form'),label=node('label',t('報上你的江湖花名','Your festival nickname'));
+      const input=node('input'); input.placeholder=t('例如：唔識就舉手','e.g. Professor Guesswork'); input.name='nickname'; input.autocomplete='nickname';input.maxLength=24;input.required=true;input.value=draft;
       input.oninput=()=>{draft=input.value;};label.append(input);form.append(label);
-      const submit=node('button',t('加入遊戲','Join game'));submit.disabled=busy||!connected;form.append(submit);
+      const submit=node('button',t('掛上名牌，入場！','Hang my name tag!'));submit.disabled=busy||!connected;form.append(submit);
       form.onsubmit=e=>{e.preventDefault();perform(join);};box.append(form);return;
     }
+    if (!player?.name && state.phase==='finished') {box.append(node('p',t('本局已結束，請等候下一局。','This game has ended. Wait for the next one.')));return;}
     if (!player?.name) {box.append(node('p',t('本局已開始，可觀看題目並等候下一局。','This game has started. Follow the questions and join the next game.')));return;}
+    if (state.phase==='lobby') {
+      const roster=Object.values(names);
+      box.append(node('p',t('你的名牌已掛好：','Your tag is up: ')+player.name,'my-tag'));
+      box.append(node('h3',t('同場燈友','Lantern crew')+' · '+roster.length));
+      showRoster(box,roster);
+      box.append(node('p',t('名牌可以飄，人先坐好。主持人一開題就到你！','Tags can float. Stay in your seat until the host starts!')));
+      return;
+    }
     box.append(node('h3',player.name));
-    if (state.phase==='lobby') {showRoster(box,Object.values(names));box.append(node('p',t('已加入，請等候講者統一開題。','You’re in. Waiting for the presenter to start.')));return;}
     const a=player.answers?.[state.round];
     if (state.phase==='open' && !a) {
       const options=node('div',undefined,'quiz-options');
@@ -231,9 +246,10 @@
     }
     if (state.phase==='open') box.append(node('p',t('已選 ','Submitted ' )+'ABCD'[a.choice]+t('，等待揭曉。','. Waiting for the reveal.')));
     else {
+      if (!state.starts && state.phase==='finished') {box.append(node('p',t('主持人已在開題前結束本局。','The host ended this game before the first question.')));return;}
       const result=score(player);
       box.append(node('p',a?(a.choice===rounds[roundIndex()].key?t('本題答對 ✓','Correct ✓'):t('本題答錯 ✗','Incorrect ✗')):t('本題未作答','No answer this round')));
-      box.append(node('p',t('累計答對 ','Correct answers: ')+result.correct+' / '+rounds.length+' · '+timeText(result.ms)));
+      box.append(node('p',t('累計答對 ','Correct answers: ')+result.correct+' / '+Object.keys(state.starts || {}).length+' · '+timeText(result.ms)));
     }
   }
   function lanternSky() {
@@ -263,8 +279,15 @@
       const rail=node('div',undefined,'round-wick');rail.setAttribute('aria-hidden','true');
       rounds.forEach((_,i)=>rail.append(node('i',undefined,i<=roundIndex()?'lit':'')));content.append(rail);
     }
-    content.append(node('h2',showQuestion?pick(round.q):state?.phase==='finished'?t('總排名','Final standings'):t('仁心燈會','Lanterns of Benevolence')));
-    content.append(node('p',showQuestion?t('第 ','Question ')+(roundIndex()+1)+' / '+rounds.length:t('五題四選一。答對較多者優先，同分按答對題目的總耗時排名。','Five multiple-choice questions. Most correct answers wins. Ties are ranked by total time on correct answers.'),'quiz-intro'));
+    const lobbyGuest=phase==='lobby' && !context?.presenter;
+    if(lobbyGuest) {
+      const mascot=node('div',undefined,'quiz-mascot');
+      mascot.setAttribute('aria-hidden','true');
+      mascot.append(node('i','• ᴗ •'));
+      content.append(mascot);
+    }
+    content.append(node('h2',lobbyGuest?(player?.name?t('人齊未？燈齊先！','Look who drifted in!'):t('來者何人？','Who goes there?')):showQuestion?pick(round.q):state?.phase==='finished'?t('總排名','Final standings'):t('仁心燈會','Lanterns of Benevolence')));
+    content.append(node('p',lobbyGuest?(player?.name?t('仁心燈會 · 等候開場','Lantern Festival · Waiting for the host'):t('仁心燈會招募燈友。入場前，先畀個花名！','The lantern crew is recruiting. Got a nickname?')):showQuestion?t('第 ','Question ')+(roundIndex()+1)+' / '+rounds.length:t('五題四選一。答對較多者優先，同分按答對題目的總耗時排名。','Five multiple-choice questions. Most correct answers wins. Ties are ranked by total time on correct answers.'),'quiz-intro'));
     if (showQuestion && (context?.presenter || state.phase==='review' || !player?.name)) {
       const options=node('div',undefined,'quiz-options');
       round.a.forEach((pair,i)=>options.append(node('div','ABCD'[i]+'  '+pick(pair),'quiz-option'+(state.phase==='review'&&i===round.key?' quiz-correct':''))));
