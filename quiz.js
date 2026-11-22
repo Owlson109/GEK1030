@@ -81,10 +81,40 @@
   }
   let names = {}, namesWatcher, opening = false;
   function disconnectNames() { namesWatcher?.(); namesWatcher=null; names={}; }
+  // Cut-paper silhouettes. Each animal is drawn on the same 80-unit seal.
+  const animals = [
+    {name:['赤狐','Fox'], ink:'#b25435', paper:'#ffd8a3', shape:'M12 15 33 25Q40 22 47 25L68 15 62 45Q59 56 40 68 21 57 18 46Z', detail:'M18 39Q31 42 39 59M62 39Q49 42 41 59M17 21 22 32M63 21 58 32'},
+    {name:['雪兔','Hare'], ink:'#7b6577', paper:'#ffe8cf', shape:'M24 37C8 4 22 -1 34 31L41 31C40 -5 56 0 52 35Q65 39 65 52 64 67 42 69 18 69 18 53 17 44 24 37Z',detail:'M21 13 29 30M48 12 46 29M23 54 13 52M58 54 69 51'},
+    {name:['夜梟','Owl'], ink:'#575985', paper:'#ebe3ae',shape:'M15 17 30 25Q40 21 51 25L66 17 63 39Q70 62 42 70 13 64 16 42Z',detail:'M20 36Q29 28 39 41 48 28 60 36M35 48 40 54 45 48M29 58 33 61M47 61 51 57'},
+    {name:['山熊','Bear'], ink:'#865038',paper:'#f1cf97',shape:'M18 34C4 19 22 9 29 24Q40 20 51 24C61 8 76 22 63 35Q73 65 44 69 12 70 18 34Z',detail:'M32 53Q40 46 48 53M40 55V60M33 62Q38 65 40 60 44 65 48 61'},
+    {name:['梅花鹿','Deer'],ink:'#855538',paper:'#ffe2a8',shape:'M21 33 10 29Q10 44 25 45 25 61 40 69 55 61 55 45 70 43 70 29L58 33Q40 22 21 33Z',detail:'M28 33 23 21 24 10M23 21 15 15M52 33 57 21 56 10M57 21 66 15M29 36 31 36M49 36 51 36'},
+    {name:['狸貓','Raccoon dog'],ink:'#596a60',paper:'#e9d8af',shape:'M17 34Q8 9 27 19L33 25Q42 22 48 25L58 18Q73 12 63 36L68 49Q65 63 42 69 19 66 12 52Z',detail:'M18 42Q25 33 37 41L33 49Q24 52 18 42ZM62 42Q55 33 43 41L47 49Q56 52 62 42Z'}
+  ];
+  function assignedAnimal(id) {
+    let hash=2166136261;
+    for(const c of state.game+'/'+id) hash=Math.imul(hash^c.charCodeAt(0),16777619);
+    return animals[(hash>>>0)%animals.length];
+  }
+  function seal(animal) {
+    const ns='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('viewBox','0 0 80 80');svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('class','animal-seal');
+    function mark(tag,attrs) {
+      const part=document.createElementNS(ns,tag);
+      Object.entries(attrs).forEach(([k,v])=>part.setAttribute(k,v));svg.append(part);
+    }
+    mark('circle',{cx:40,cy:40,r:39,fill:animal.paper});
+    mark('path',{d:animal.shape,fill:animal.ink});
+    mark('path',{d:animal.detail,fill:'none',stroke:animal.name[1]==='Deer'?animal.ink:animal.paper,'stroke-width':2.4,'stroke-linecap':'round'});
+    for(const x of [30,50]) mark('circle',{cx:x,cy:43,r:2.5,fill:'#252f34'});
+    if(animal.name[1]!=='Owl') mark('path',{d:'M36 53Q40 51 44 53L40 57Z',fill:'#252f34'});
+    return svg;
+  }
   function showRoster(box, entries) {
     const list=node('ul',undefined,'lantern-roll');
-    for(const name of entries) {
-      const chip=node('li',name);
+    for(const [id,name] of entries) {
+      const chip=node('li');chip.append(seal(assignedAnimal(id)),node('span',name));
       chip.style.setProperty('--tone',String([...name].reduce((sum,c)=>sum+c.codePointAt(0),0)%46));
       list.append(chip);
     }
@@ -176,7 +206,7 @@
     const people = standings();
     if (state.phase==='lobby') {
       box.append(node('h3',t('已加入','Joined')+' · '+people.length));
-      if (people.length) showRoster(box,people.map(p=>p.name)); else box.append(node('p',t('等待第一盞名燈亮起…','Waiting for the first player…')));
+      if (people.length) showRoster(box,Object.entries(players).filter(([,p])=>p.name).map(([id,p])=>[id,p.name])); else box.append(node('p',t('等待第一盞名燈亮起…','Waiting for the first player…')));
       box.append(button(t('統一開始第一題','Start question 1 for everyone'),()=>advance('open'),!people.length));
       return;
     }
@@ -230,7 +260,12 @@
     if (!player?.name && state.phase==='finished') {box.append(node('p',t('本局已結束，請等候下一局。','This game has ended. Wait for the next one.')));return;}
     if (!player?.name) {box.append(node('p',t('本局已開始，可觀看題目並等候下一局。','This game has started. Follow the questions and join the next game.')));return;}
     if (state.phase==='lobby') {
-      const roster=Object.values(names);
+      const roster=Object.entries(names);
+      const animal=assignedAnimal(uid);
+      const badge=node('div',undefined,'festival-pass');
+      const caption=node('div');
+      caption.append(node('small',t('今夜你的化身','Your woodland alter ego')),node('strong',pick(animal.name)));
+      badge.append(seal(animal),caption);box.append(badge);
       box.append(node('p',t('你的名牌已掛好：','Your tag is up: ')+player.name,'my-tag'));
       box.append(node('h3',t('同場燈友','Lantern crew')+' · '+roster.length));
       showRoster(box,roster);
@@ -254,6 +289,15 @@
   }
   function lanternSky() {
     const sky=node('div',undefined,'lantern-sky');sky.setAttribute('aria-hidden','true');
+    const ns='http://www.w3.org/2000/svg';
+    const hills=document.createElementNS(ns,'svg');
+    hills.setAttribute('class','festival-hills');hills.setAttribute('viewBox','0 0 1200 250');hills.setAttribute('preserveAspectRatio','none');
+    for(const [fill,d] of [
+      ['#364d62','M0 65 80 93 169 48 259 100 337 70 461 126 604 67 717 103 862 38 956 89 1058 41 1200 86V250H0Z'],
+      ['#254546','M0 129Q97 41 241 125T498 158Q603 76 753 131T1009 113Q1091 56 1200 103V250H0Z'],
+      ['#192f35','M0 159Q118 123 228 179T498 192Q664 139 818 177T1099 164L1200 128V250H0Z']
+    ]){const ridge=document.createElementNS(ns,'path');ridge.setAttribute('d',d);ridge.setAttribute('fill',fill);hills.append(ridge);}
+    sky.append(hills);
     for(let i=0;i<8;i++){
       const lamp=node('i',undefined,'sky-lamp');lamp.style.setProperty('--x',(i*37%103)+'%');
       lamp.style.setProperty('--delay',(-i*1.73)+'s');lamp.style.setProperty('--size',(29+i%3*19)+'px');
@@ -280,14 +324,14 @@
       rounds.forEach((_,i)=>rail.append(node('i',undefined,i<=roundIndex()?'lit':'')));content.append(rail);
     }
     const lobbyGuest=phase==='lobby' && !context?.presenter;
-    if(lobbyGuest) {
+    if(lobbyGuest && !player?.name) {
       const mascot=node('div',undefined,'quiz-mascot');
       mascot.setAttribute('aria-hidden','true');
       mascot.append(node('i','• ᴗ •'));
       content.append(mascot);
     }
-    content.append(node('h2',lobbyGuest?(player?.name?t('人齊未？燈齊先！','Look who drifted in!'):t('來者何人？','Who goes there?')):showQuestion?pick(round.q):state?.phase==='finished'?t('總排名','Final standings'):t('仁心燈會','Lanterns of Benevolence')));
-    content.append(node('p',lobbyGuest?(player?.name?t('仁心燈會 · 等候開場','Lantern Festival · Waiting for the host'):t('仁心燈會招募燈友。入場前，先畀個花名！','The lantern crew is recruiting. Got a nickname?')):showQuestion?t('第 ','Question ')+(roundIndex()+1)+' / '+rounds.length:t('五題四選一。答對較多者優先，同分按答對題目的總耗時排名。','Five multiple-choice questions. Most correct answers wins. Ties are ranked by total time on correct answers.'),'quiz-intro'));
+    content.append(node('h2',lobbyGuest?(player?.name?t('林中點名！','Woodland roll call!'):t('邊位山友駕到？','Who’s in the woods?')):showQuestion?pick(round.q):state?.phase==='finished'?t('總排名','Final standings'):t('仁心燈會','Lanterns of Benevolence')));
+    content.append(node('p',lobbyGuest?(player?.name?t('仁心燈會 · 等候開場','Lantern Festival · Waiting for the host'):t('仁心燈會招募燈友。報上花名，看看今晚你是哪隻動物！','Pick a nickname to reveal your woodland alter ego.')):showQuestion?t('第 ','Question ')+(roundIndex()+1)+' / '+rounds.length:t('五題四選一。答對較多者優先，同分按答對題目的總耗時排名。','Five multiple-choice questions. Most correct answers wins. Ties are ranked by total time on correct answers.'),'quiz-intro'));
     if (showQuestion && (context?.presenter || state.phase==='review' || !player?.name)) {
       const options=node('div',undefined,'quiz-options');
       round.a.forEach((pair,i)=>options.append(node('div','ABCD'[i]+'  '+pick(pair),'quiz-option'+(state.phase==='review'&&i===round.key?' quiz-correct':''))));
