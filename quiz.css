@@ -67,3 +67,18 @@ html[data-quiz-active] main.deck>.quiz-slide,html[data-quiz-active] .quiz-slide>
 .quiz-chart{display:grid;grid-template-columns:repeat(2,1fr);gap:7px 25px;margin:10px 0 18px}.quiz-chart>div{display:grid;grid-template-columns:1em 1fr 2ch;align-items:center;gap:8px}.quiz-chart i{height:8px;border-radius:4px;background:#e7bd78;transform-origin:left;transform:scaleX(var(--amount));animation:bar-fill .65s ease-out}.winner-banner{padding:15px 22px;margin:16px 0;border-left:4px solid #e4b363;background:linear-gradient(110deg,#735532,#39453d 80%);color:#ffe1a9}.winner-banner strong{display:block;font:700 clamp(24px,3vw,45px)/1.4 Georgia,serif;overflow-wrap:anywhere}.winner-banner small{letter-spacing:.15em}
 @keyframes bar-fill{from{transform:scaleX(0)}to{transform:scaleX(var(--amount))}}
 @media(prefers-reduced-motion:reduce){.quiz-chart i{animation:none}}
+
+/* Festival check-in and floating paper name tags. */
+.quiz-root[data-role=guest][data-phase=lobby] .quiz-content{max-width:860px;background:linear-gradient(145deg,#204944,#152f37);border:2px solid #d9af69;border-radius:28px;padding:clamp(22px,4vw,52px);display:flow-root}
+.quiz-root[data-role=guest][data-phase=lobby] h2{font-size:clamp(38px,7vw,78px);line-height:1.12;color:#ffe4a2;margin:.28em 0;letter-spacing:-.04em}
+.quiz-root[data-role=guest][data-phase=lobby] label,.quiz-root[data-role=guest][data-phase=lobby] h3{font-size:clamp(22px,3vw,34px);font-weight:800}
+.quiz-root[data-role=guest][data-phase=lobby] input,.quiz-root[data-role=guest][data-phase=lobby] button{font-size:clamp(19px,2.7vw,29px);max-width:100%;box-sizing:border-box}
+.quiz-root[data-role=guest][data-phase=lobby] form{clear:both}
+.quiz-mascot{float:right;margin:8px 6px 18px 12px;position:relative;width:clamp(62px,10vw,114px);aspect-ratio:1.18;border-block:6px solid #e5aa54;border-radius:45%;background:repeating-linear-gradient(90deg,transparent 0 18%,#96443930 18% 21%),radial-gradient(circle at 40% 40%,#ffd88a,#f98b53 70%);color:#532e29;text-align:center;display:grid;place-items:center;animation:tag-bob 3.4s ease-in-out infinite alternate}
+.quiz-mascot i{font:900 clamp(15px,3vw,32px)/1 system-ui;white-space:pre}.quiz-mascot:after{content:'';position:absolute;top:100%;left:47%;width:6%;height:15px;background:#e8aa53}
+.quiz-root .my-tag{clear:both;color:#ffe5b8;overflow-wrap:anywhere}
+.quiz-root[data-role=guest] .lantern-roll{gap:18px 14px;padding:14px 8px;max-height:35vh}
+.quiz-root[data-role=guest] .lantern-roll li{max-width:100%;box-sizing:border-box;padding:9px 18px;font-size:clamp(22px,3.5vw,40px);line-height:1.25;font-weight:800;color:#293a35;border:2px solid #ffe3b7;border-radius:5px 16px 16px 5px;background:hsl(calc(15 + var(--tone)) 82% 80%);animation:tag-bob 2.8s ease-in-out infinite alternate;animation-delay:calc(var(--tone) * -.13s)}
+.quiz-root[data-role=guest] .lantern-roll li:before{background:#31453e;width:7px;height:7px;vertical-align:middle;box-shadow:none}
+@keyframes tag-bob{from{transform:translateY(-4px) rotate(-2deg)}to{transform:translateY(4px) rotate(2deg)}}
+.quiz-root button.end-game{display:block;margin:8px 0 12px auto;padding:7px 15px;background:transparent;color:#ffd7bf;border:1px solid #d6a28b;font-size:16px;box-shadow:none}
